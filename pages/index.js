@@ -25,13 +25,23 @@ const cardStyle = {
 export default function Home({ items }) {
   const router = useRouter();
 
-  const handleEdit = (id) => {
-    // Redirect to the edit page with the task ID as a parameter
-    router.push(`/edit/${id}`);
+  const handleEdit = async (id) => {
+    try {
+      // Fetch the item details for the given id
+      const item = await fetchTaskById(id);
+
+      // Redirect to the edit page with the item data as query parameter
+      router.push({
+        pathname: `/edit/${id}`,
+        query: { taskData: JSON.stringify(item) },
+      });
+    } catch (error) {
+      console.error('Error fetching item data:', error);
+    }
   };
 
   const handleDelete = (id) => {
-    // Redirect to the delete page with the task ID as a parameter
+    // Redirect to the delete page with the item ID as a parameter
     console.log('item deleted success', id);
     router.push(`/delete/${id}`);
   };

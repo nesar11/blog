@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Button, TextField } from '@mui/material';
-import tasks from '../data/tasks';
 
 const formContainerStyle = {
   display: 'flex',
@@ -24,26 +23,32 @@ export default function New() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Generate a new unique ID for the new task
-    const newId =
-      tasks.length > 0 ? Math.max(...tasks.map((task) => task.id)) + 1 : 1;
-
-    // Create the new task object
-    const newTask = {
-      id: newId,
-      title: title,
-      description: description,
-      completed: false,
+    const newTaskData = {
+      title,
+      description,
     };
 
-    // Add the new task to the tasks array
-    tasks.push(newTask);
+    try {
+      const response = await fetch('http://localhost:8000/api/posts/addPost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newTaskData),
+      });
 
-    // Redirect back to the home page after creating the task
-    router.push('/');
+      if (!response.ok) {
+        throw new Error('Failed to create task.');
+      }
+
+      // Redirect back to the home page after creating the task
+      router.push('/');
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
   };
 
   return (
