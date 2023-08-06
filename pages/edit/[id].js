@@ -1,42 +1,66 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { Button, TextField } from '@mui/material';
-import tasks from '../../data/tasks';
+import { TextField, Button } from '@mui/material';
 
 export default function Edit() {
   const router = useRouter();
   const { id } = router.query;
 
-  // Find the task with the given ID
-  const task = tasks.find((task) => task.id === parseInt(id));
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
 
-  // State variables to store updated title and description
-  const [title, setTitle] = useState(task ? task.title : '');
-  const [description, setDescription] = useState(task ? task.description : '');
+  useEffect(() => {
+    // Fetch the existing task data based on the ID
+    if (id) {
+      fetch(`http://localhost:8000/api/posts/find/${id}`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch task details.');
+          }
+          return response.json();
+        })
+        .then((data) => {
+          // Handle the fetched data
+          setTitle(data.title);
+          setDescription(data.description);
+        })
+        .catch((error) => {
+          console.error('Error fetching task details:', error);
+        });
+    }
+  }, [id]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    // Update the task with the given ID
+    // Prepare the updated data
     const updatedTask = {
-      ...task,
       title: title,
       description: description,
     };
 
-    // Find the index of the task in the tasks array
-    const taskIndex = tasks.findIndex((task) => task.id === parseInt(id));
-
-    // Replace the old task with the updated task
-    tasks[taskIndex] = updatedTask;
-
-    // Redirect back to the home page after updating the task
-    router.push('/');
+    // Send the PATCH request to update the task data
+    fetch(`http://localhost:8000/api/posts/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updatedTask),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to update task data.');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Redirect back to the home page after editing the task
+        router.push('/');
+      })
+      .catch((error) => {
+        console.error('Error updating task data:', error);
+      });
   };
-
-  if (!task) {
-    return <div>Task not found</div>;
-  }
 
   return (
     <div>
@@ -63,7 +87,7 @@ export default function Edit() {
           />
         </div>
         <Button type="submit" variant="contained" color="primary">
-          Update Task
+          Save Changes
         </Button>
       </form>
     </div>
